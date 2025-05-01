@@ -1,0 +1,103 @@
+ReverseClient.java:
+
+import ReverseModule.Reverse;
+import ReverseModule.ReverseHelper;
+import org.omg.CosNaming.*;
+import org.omg.CORBA.*;
+import java.io.*;
+public class ReverseClient {
+    public static void main(String args[]) {
+        try {
+            ORB orb = ORB.init(args, null);
+            org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+            String name = "Reverse";
+            Reverse reverseObj = ReverseHelper.narrow(ncRef.resolve_str(name));
+            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+            System.out.print("Enter String: ");
+            String str = br.readLine();
+            String result = reverseObj.reverse_string(str);
+            System.out.println(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+ReverseImpl.java:
+
+import ReverseModule.ReversePOA;
+public class ReverseImpl extends ReversePOA {
+    ReverseImpl() {
+        super();
+        System.out.println("Reverse Object Created");
+    }
+    public String reverse_string(String name) {
+        StringBuilder str = new StringBuilder(name);
+        str.reverse();
+        return "Server Send " + str.toString();
+    }
+}
+
+ReverseServer.java:
+
+import ReverseModule.Reverse;
+import ReverseModule.ReverseHelper;
+import org.omg.CosNaming.*;
+import org.omg.CORBA.*;
+import org.omg.PortableServer.*;
+
+public class ReverseServer {
+    public static void main(String[] args) {
+        try {
+            ORB orb = ORB.init(args, null);
+            POA rootPOA = POAHelper.narrow(orb.resolve_initial_references("RootPOA"));
+            rootPOA.the_POAManager().activate();
+            ReverseImpl rvr = new ReverseImpl();
+            org.omg.CORBA.Object ref = rootPOA.servant_to_reference(rvr);
+            Reverse h_ref = ReverseHelper.narrow(ref);
+            org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+            String name = "Reverse";
+            NameComponent path[] = ncRef.to_name(name);
+            ncRef.rebind(path, h_ref);
+            System.out.println("Reverse Server ready and waiting...");
+            orb.run();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+ReverseModule.idl:
+module ReverseModule
+{
+interface Reverse
+{
+string reverse_string(in string str);
+};
+};
+
+
+ORB:
+PS C:\Users\deepa\OneDrive\Desktop\LP-V\practical-2> idlj -fall ReverseModule.idl
+PS C:\Users\deepa\OneDrive\Desktop\LP-V\practical-2> javac *.java ReverseModule/*.java
+Note: ReverseModule\ReversePOA.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+PS C:\Users\deepa\OneDrive\Desktop\LP-V\practical-2> orbd -ORBInitialPort 1050
+
+
+
+Server:
+
+PS C:\Users\deepa\OneDrive\Desktop\LP-V\practical-2> java ReverseServer -ORBInitialPort 1050 -ORBInitialHost localhost
+Reverse Object Created
+Reverse Server ready and waiting...
+
+
+Client:
+PS C:\Users\deepa\OneDrive\Desktop\LP-V\practical-2> java ReverseClient -ORBInitialPort 1050 -ORBInitialHost localhost
+Enter String: Deepak
+Server Send kapeeD
+PS C:\Users\deepa\OneDrive\Desktop\LP-V\practical-2> 

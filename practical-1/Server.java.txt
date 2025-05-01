@@ -1,0 +1,17 @@
+import java.rmi.*;
+
+public class Server
+{
+	public static void main(String args[])
+	{
+		try
+		{
+			ServerIntf serverIntf = new ServerIntf();
+			Naming.rebind("Server",serverIntf);
+		}
+		catch(Exception e)
+		{
+			System.out.println("Error occoured"+ e.getMessage());
+		}
+	}
+}

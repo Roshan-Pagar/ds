@@ -1,0 +1,272 @@
+Ring.java:
+import java.util.Scanner;
+
+public class Ring {
+    public static void main(String[] args) {
+        int temp, i, j;
+        Rr proc[] = new Rr[10];
+        for (i = 0; i < proc.length; i++) proc[i] = new Rr();
+
+        Scanner in = new Scanner(System.in);
+        System.out.println("Enter the number of processes: ");
+        int num = in.nextInt();
+
+        for (i = 0; i < num; i++) {
+            proc[i].index = i;
+            System.out.println("Enter the ID of process: ");
+            proc[i].id = in.nextInt();
+            proc[i].state = "active";
+            proc[i].f = 0;
+        }
+
+        // Sort processes by ID
+        for (i = 0; i < num - 1; i++) {
+            for (j = 0; j < num - 1; j++) {
+                if (proc[j].id > proc[j + 1].id) {
+                    temp = proc[j].id;
+                    proc[j].id = proc[j + 1].id;
+                    proc[j + 1].id = temp;
+                }
+            }
+        }
+
+        for (i = 0; i < num; i++) {
+            System.out.print("[" + i + "] " + proc[i].id + " ");
+        }
+
+        int init, ch, temp1, temp2, ch1;
+        int arr[] = new int[10];
+        proc[num - 1].state = "inactive";
+        System.out.println("\nProcess " + proc[num - 1].id + " selected as coordinator");
+
+        while (true) {
+            System.out.println("\n1. Election\n2. Quit");
+            ch = in.nextInt();
+            for (i = 0; i < num; i++) proc[i].f = 0;
+
+            switch (ch) {
+                case 1:
+                    System.out.println("Enter the process number who initiates the election: ");
+                    init = in.nextInt();
+                    init--;
+                    temp2 = init;
+                    temp1 = (init + 1) % num;
+                    i = 0;
+
+                    while (temp2 != temp1) {
+                        if ("active".equals(proc[temp1].state) && proc[temp1].f == 0) {
+                            System.out.println("Process " + proc[init].id + " sends message to " + proc[temp1].id);
+                            proc[temp1].f = 1;
+                            init = temp1;
+                            arr[i++] = proc[temp1].id;
+                        }
+                        temp1 = (temp1 + 1) % num;
+                    }
+
+                    System.out.println("Process " + proc[init].id + " sends message to " + proc[temp1].id);
+                    arr[i++] = proc[temp1].id;
+
+                    int max = -1;
+                    for (j = 0; j < i; j++) {
+                        if (max < arr[j]) max = arr[j];
+                    }
+
+                    System.out.println("Process " + max + " selected as coordinator");
+                    for (i = 0; i < num; i++) {
+                        if (proc[i].id == max) proc[i].state = "inactive";
+                    }
+                    break;
+
+                case 2:
+                    System.out.println("Program terminated...");
+                    return;
+
+                default:
+                    System.out.println("Invalid choice");
+                    break;
+            }
+        }
+    }
+}
+
+class Rr {
+    public int index;
+    public int id;
+    public int f;
+    String state;
+}
+
+Output:
+PS C:\Users\deepa\OneDrive\Desktop\LP-V\practical-6> java Ring
+Enter the number of processes: 
+2
+Enter the ID of process: 
+1
+Enter the ID of process: 
+2
+[0] 1 [1] 2 
+Process 2 selected as coordinator
+
+1. Election
+2. Quit
+1
+Enter the process number who initiates the election: 
+2
+Process 2 sends message to 1
+Process 1 sends message to 2
+Process 2 selected as coordinator
+
+1. Election
+2. Quit
+2
+Program terminated...
+
+
+Bully.java:
+
+import java.util.Scanner;
+
+public class Bully {
+    static boolean[] state = new boolean[5];
+
+    public static void up(int up) {
+        if (state[up - 1]) {
+            System.out.println("Process " + up + " is already up");
+        } else {
+            state[up - 1] = true;
+            System.out.println("Process " + up + " held election");
+            for (int i = up; i < 5; ++i) {
+                System.out.println("Election message sent from process " + up + " to process " + (i + 1));
+            }
+            for (int i = up + 1; i <= 5; ++i) {
+                if (!state[i - 1]) continue;
+                System.out.println("Alive message sent from process " + i + " to process " + up);
+                break;
+            }
+        }
+    }
+
+    public static void down(int down) {
+        if (!state[down - 1]) {
+            System.out.println("Process " + down + " is already down.");
+        } else {
+            state[down - 1] = false;
+            System.out.println("Process " + down + " brought down.");
+        }
+    }
+
+    public static void mess(int mess) {
+        if (state[mess - 1]) {
+            if (state[4]) {
+                System.out.println("OK");
+            } else {
+                System.out.println("Process " + mess + " starts election");
+                for (int i = mess; i < 5; ++i) {
+                    System.out.println("Election sent from process " + mess + " to process " + (i + 1));
+                }
+                for (int i = 5; i >= mess; --i) {
+                    if (!state[i - 1]) continue;
+                    System.out.println("Coordinator message sent from process " + i + " to all");
+                    break;
+                }
+            }
+        } else {
+            System.out.println("Process " + mess + " is down");
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        for (int i = 0; i < 5; ++i) state[i] = true;
+
+        System.out.println("5 active processes: P1 P2 P3 P4 P5");
+        System.out.println("Process 5 is the initial coordinator");
+
+        int choice;
+        do {
+            System.out.println("\n1. Up a process");
+            System.out.println("2. Down a process");
+            System.out.println("3. Send a message");
+            System.out.println("4. Exit");
+            choice = sc.nextInt();
+
+            switch (choice) {
+                case 1:
+                    System.out.println("Enter process to bring up:");
+                    int up = sc.nextInt();
+                    if (up == 5) {
+                        System.out.println("Process 5 is coordinator");
+                        state[4] = true;
+                    } else {
+                        up(up);
+                    }
+                    break;
+
+                case 2:
+                    System.out.println("Enter process to bring down:");
+                    int down = sc.nextInt();
+                    down(down);
+                    break;
+
+                case 3:
+                    System.out.println("Which process will send the message:");
+                    int mess = sc.nextInt();
+                    mess(mess);
+                    break;
+
+                case 4:
+                    System.out.println("Program exited.");
+                    break;
+
+                default:
+                    System.out.println("Invalid choice");
+                    break;
+            }
+
+        } while (choice != 4);
+    }
+}
+
+
+Output:
+PS C:\Users\deepa\OneDrive\Desktop\LP-V\practical-6> java Bully
+5 active processes: P1 P2 P3 P4 P5
+Process 5 is the initial coordinator
+
+1. Up a process
+2. Down a process
+3. Send a message
+4. Exit
+2
+Enter process to bring down:
+5
+Process 5 brought down.
+
+1. Up a process
+2. Down a process
+3. Send a message
+4. Exit
+3
+Which process will send the message:
+2
+Process 2 starts election
+Election sent from process 2 to process 3
+Election sent from process 2 to process 4
+Election sent from process 2 to process 5
+Coordinator message sent from process 4 to all
+
+1. Up a process
+2. Down a process
+3. Send a message
+4. Exit
+1
+Enter process to bring up:
+5
+Process 5 is coordinator
+
+1. Up a process
+2. Down a process
+3. Send a message
+4. Exit
+4
+Program exited.
